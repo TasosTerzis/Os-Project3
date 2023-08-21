@@ -10,7 +10,7 @@ CFLAGS =  -Werror -g -I$(INCLUDE)
 LDFLAGS = -lpthread
 
 # files .o
-OBJS = fileserver.o  $(MODULES)/customer.o 
+OBJS = fileserver.o  $(MODULES)/customer.o $(MODULES)/queue.o
 
 # executable
 EXEC = fileserver
