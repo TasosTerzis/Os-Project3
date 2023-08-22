@@ -1,34 +1,24 @@
 #include "../include/mutual.h"
 
-// Function to create a new request
-Request createRequest(pid_t pid, int fileNum, int start, int stop, time_t requestTime, time_t completeTime) {
-    Request newRequest = (Request)malloc(sizeof(struct request));
-    newRequest->pid = pid;
-    newRequest->fileNum = fileNum;
-    newRequest->start = start;
-    newRequest->stop = stop;
-    newRequest->requestTime = requestTime;
-    newRequest->completeTime = completeTime;
-    newRequest->next = NULL;
-    return newRequest;
-}
-
 // Function to create an empty queue
 Queue createQueue() {
-    Queue newQueue = (Queue)malloc(sizeof(struct queue));
-    newQueue->front = newQueue->rear = NULL;
-    return newQueue;
+    Queue queue = (Queue)malloc(sizeof(struct queue));
+    queue->front = queue->rear = NULL;
+    queue->size = 0;
+    return queue;
 }
 
 // Function to enqueue a request to the rear of the queue
-void enqueue(Queue queue, pid_t pid, int fileNum, int start, int stop, time_t requestTime, time_t completeTime) {
-    Request newRequest = createRequest(pid, fileNum, start, stop, requestTime, completeTime);
+void enqueue(Queue queue, Request request) {
     if (queue->rear == NULL) {
-        queue->front = queue->rear = newRequest;
+        queue->front = queue->rear = request;
+        queue->size++;
         return;
     }
-    queue->rear->next = newRequest;
-    queue->rear = newRequest;
+    queue->rear->next = request;
+    queue->rear = request;
+    queue->size++;
+    gettimeofday(&request->requestTime, NULL);      // set request time since
 }
 
 // Function to dequeue a request from the front of the queue
@@ -41,6 +31,7 @@ void dequeue(Queue queue) {
 
     if (queue->front == NULL)
         queue->rear = NULL;
+    queue->size--;
 
     free(temp);
 }
@@ -53,4 +44,18 @@ void printQueue(Queue queue) {
         current = current->next;
     }
     printf("\n");
+}
+
+int queueSize(Queue queue) {
+    return queue->size;
+}
+
+void destroyQueue(Queue queue) {
+    Request current = queue->front;
+    while (current != NULL) {
+        Request temp = current;
+        current = current->next;
+        free(temp);
+    }
+    free(queue);
 }

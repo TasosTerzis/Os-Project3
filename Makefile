@@ -3,7 +3,7 @@ INCLUDE = ./include
 MODULES = ./modules
 
 # compiler
-CC = g++
+CC = gcc
 
 # Compile options. 
 CFLAGS =  -Werror -g -I$(INCLUDE) 
@@ -16,7 +16,7 @@ OBJS = fileserver.o  $(MODULES)/customer.o $(MODULES)/queue.o
 EXEC = fileserver
 
 # arguments
-ARGS = 10 10 70 1
+ARGS = 1 10 70 1
 
 $(EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
