@@ -18,8 +18,7 @@
 
 
 struct request {
-    int pindex;
-    pid_t pid; // client pid
+    int shmTempId; // shared memory id
     int fileNum;
     int start, stop;
     struct timeval requestTime; // time of request
@@ -38,9 +37,11 @@ typedef struct shared_memory* SharedMemory;
 struct temp_shared_memory {
     char array[BLOCK_SIZE];
     sem_t mutex;
+    sem_t dataReady;
+    sem_t dataEaten;
 };
 typedef struct temp_shared_memory* TempSharedMemory;
 
-void customer (SharedMemory, int, int, float);
+void customer (SharedMemory, int, int, float, int);
 
 void* serverThread (void*);

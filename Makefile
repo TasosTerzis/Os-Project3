@@ -16,13 +16,13 @@ OBJS = fileserver.o  $(MODULES)/customer.o $(MODULES)/thread.o
 EXEC = fileserver
 
 # arguments
-ARGS = 3 10 20 1
+ARGS = 1 10 20 1
 
 $(EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)
 
 clean:
-	rm -f $(OBJS) $(EXEC) 
+	rm -f $(OBJS) $(EXEC) log/*
 
 run: $(EXEC)
 	./$(EXEC) $(ARGS)

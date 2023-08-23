@@ -1,6 +1,7 @@
 #include "./include/mutual.h"
 
 int main(int argc, char** argv) {
+    
     if (argc != 5) {
         printf("Usage: %s <N> <K> <L> <l>\n", argv[0]); exit(1); }
 
@@ -10,6 +11,9 @@ int main(int argc, char** argv) {
     float l = atof(argv[4]); // l: Exponential time between SharedMemory
     if(L > MAX_QUEUE_SIZE) {
         printf("L must be <= MAX_QUEUE_SIZE: %d\n", MAX_QUEUE_SIZE); exit(1); }
+
+    // delete all log files
+    system("rm -rf log/*");
 
     // Create shared memory segment
     int shmid = shmget(IPC_PRIVATE, sizeof(SharedMemory), IPC_CREAT | 0666);
@@ -41,7 +45,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < N; i++) {
         pid_t pid = fork();
         if (pid == 0) {     // Child process   
-            customer(shm, K, L, l);
+            customer(shm, K, L, l, i);
             exit(0);
         } 
         else if (pid > 0)  
@@ -82,9 +86,8 @@ int main(int argc, char** argv) {
     }
 
     // Wait for all threads to finish
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) 
         pthread_join(thread_ids[i], NULL);
-    }
 
     // wait for all child customers to finish
     for (int i = 0; i < N; i++) 
