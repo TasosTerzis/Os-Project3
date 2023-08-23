@@ -1,11 +1,10 @@
 #include "../include/mutual.h"
 
-void customer (SharedMemory shm, int K, int L, int l) {
+void customer (SharedMemory shm, int K, int L, float l) {
 
     pid_t pid = getpid();
 	srand(pid);
 
-    printf("i'll create %d requests\n", L);
     for(int i = 0; i < L; i++ ) { 
 
         // form a request                    
@@ -14,18 +13,40 @@ void customer (SharedMemory shm, int K, int L, int l) {
         request.fileNum = rand() % K;
         request.start = rand() % TOTAL_LINES;
         request.stop = rand() % TOTAL_LINES;
+        if(request.start > request.stop) {
+            int temp = request.start;
+            request.start = request.stop;
+            request.stop = temp;
+        }
 
-        // use semaphores to access the queue and add the request
-        sem_wait(&shm->queueSem);
-        enqueue(&shm->queue, request);
-        sem_post(&shm->queueSem);
-        sem_post(&shm->nonEmpty);   // notify server that queue is not empty
+        // simulate:  "Among the requests an exponentially distributed time" 
+        double u = (double)rand() / RAND_MAX;
+        double time_between_requests = -log(1.0 - u) / (double) l;
 
-        // start
+        // Wait for empty slot in shared memory buffer
+        sem_wait(&(shm->empty));
+        sem_wait(&(shm->mutex));
 
-    //     // Among the requests an exponentially distributed time (parameter λ defined as simulation start parameter
-    //     // since λ is given, we'll simulate the exponential time by sleeping for a random time between 0 and l
+        // Put request in shared memory
+        shm->array[shm->in] = request;
+        shm->in = (shm->in + 1) % MAX_QUEUE_SIZE;
+        shm->size++;
+        gettimeofday(&request.requestTime, NULL); // set request time since
+        printf("RequestTime: %ld, PID: %d, FileNum: %d, Start: %d, Stop: %d\n", 
+        request.requestTime.tv_usec, request.pid, request.fileNum, request.start, request.stop);
+        sem_post(&shm->mutex);
+        sem_post(&shm->full);
+
+        // DONT FORGET TO UNCOMMENT THIS. 
+        // usleep(time_between_requests * 1000000);
 
     }
 
 }
+
+
+
+
+
+
+

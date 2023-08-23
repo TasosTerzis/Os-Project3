@@ -8,52 +8,28 @@
 #include <semaphore.h>
 #include <time.h>
 #include <sys/time.h>
+#include <math.h>
 #define TOTAL_FILES 10   // fileserver has exactly TOTAL_FILES files 
 #define TOTAL_LINES 100  // each file has 20 exactly TOTAL_LINES lines
 #define BLOCK_SIZE 100   // equal to MAX_LINE_LENGTH. (The existing files have about 70 characters per line.)
-
-
 #define MAX_QUEUE_SIZE 100 // Maximum number of elements in the queue
 
-typedef struct request Request;
+
 struct request {
     pid_t pid; // client pid
     int fileNum;
     int start, stop;
     struct timeval requestTime; // time of request
 };
-
-// fifo circular queue to store requests
-struct queue {
-    int front, rear, size;
-    Request array[MAX_QUEUE_SIZE];
-};
-typedef struct queue Queue;
+typedef struct request Request;
 
 struct shared_memory {
-    sem_t nonEmpty; // semaphore to check if queue is empty
-    sem_t countSem;   
-    int count;
-    sem_t queueSem;
-    Queue queue;
-                // probably i'll add a check for new request: if queueSize was 0, then increase semaphore a.
-                // server had been waiting on a semaphore a, so it will be released and will check the queue again.
-                // also, when a request is completed, request will check if it was the last one so. 
+    sem_t mutex;
+    sem_t empty;   
+    sem_t full;
+    int in, out, size;
+    Request array[MAX_QUEUE_SIZE];
 };
 typedef struct shared_memory* SharedMemory;
 
-void customer (SharedMemory, int K, int L, int l);
-
-// Function to create an empty queue
-Queue createQueue();
-
-// Function to enqueue a request to the rear of the queue
-void enqueue(Queue*, Request);
-
-// Function to dequeue a request from the front of the queue
-Request dequeue(Queue*);
-
-int queueSize(Queue*);
-
-// Function to print the requests in the queue
-void printQueue(Queue*);
+void customer (SharedMemory, int K, int L, float l);

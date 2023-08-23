@@ -7,16 +7,16 @@ CC = gcc
 
 # Compile options. 
 CFLAGS =  -Werror -g -I$(INCLUDE) 
-LDFLAGS = -lpthread
+LDFLAGS = -lpthread -lm
 
 # files .o
-OBJS = fileserver.o  $(MODULES)/customer.o $(MODULES)/queue.o
+OBJS = fileserver.o  $(MODULES)/customer.o 
 
 # executable
 EXEC = fileserver
 
 # arguments
-ARGS = 1 10 70 1
+ARGS = 3 10 20 1
 
 $(EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)

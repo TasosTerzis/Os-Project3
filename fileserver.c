@@ -7,7 +7,7 @@ int main(int argc, char** argv) {
     int N = atoi(argv[1]); // N customers customers
     int K = atoi(argv[2]); // K available files in system
     int L = atoi(argv[3]); // L requests per customers
-    int l = atoi(argv[4]); // l: Exponential time between SharedMemory
+    float l = atof(argv[4]); // l: Exponential time between SharedMemory
     if(L > MAX_QUEUE_SIZE) {
         printf("L must be <= MAX_QUEUE_SIZE: %d\n", MAX_QUEUE_SIZE); exit(1); }
 
@@ -22,15 +22,14 @@ int main(int argc, char** argv) {
         perror("shmat"); exit(1);}
 
     // initialize shared memory
-    shm->queue.front = shm->queue.rear = shm->queue.size = 0;
-
+    shm->in = shm->out = shm->size = 0;
 
     // Initialize shm->queueSem semaphore
-    if (sem_init(&shm->queueSem, 1, 1) == -1) {
+    if (sem_init(&shm->mutex, 1, 1) == -1) {
         perror("sem_init"); exit(1);}
-    if (sem_init(&shm->nonEmpty, 1, 0) == -1) {
+    if (sem_init(&shm->empty, 1, MAX_QUEUE_SIZE) == -1) {
         perror("sem_init"); exit(1);}
-    if (sem_init(&shm->countSem, 1, 1) == -1) {
+    if (sem_init(&shm->full, 1, 0) == -1) {
         perror("sem_init"); exit(1);}
 
 
@@ -52,56 +51,31 @@ int main(int argc, char** argv) {
     }
 
     // Your simulation logic goes here
+    int count=0;
     while(1) {
 
-        sem_wait(&shm->nonEmpty); // wait if queue is currently empty
-        sem_wait(&shm->countSem); 
-        if(shm->count == N*L)
-            break;
-        sem_post(&shm->countSem);
+        sem_wait(&shm->full);
+        sem_wait(&shm->mutex);
 
-        sem_wait(&shm->queueSem); // wait if queue is currently being accessed by another thread
-        Request request = dequeue(&shm->queue);
-        if(queueSize(&shm->queue) == 0)
-            sem_post(&shm->nonEmpty); // wait if queue is currently empty
-        sem_post(&shm->queueSem); // release queue for other threads to access
-        printf("PID: %d, FileNum: %d\n", request.pid, request.fileNum);
+        // Get request from shared memory
+        Request request = shm->array[shm->out];
+        shm->out = (shm->out + 1) % MAX_QUEUE_SIZE;
+        shm->size--;
+        count++;
+        if(count == N*L) {
+            sem_post(&shm->mutex);
+            sem_post(&shm->full);
+            break;
+        }
+        sem_post(&shm->mutex);
+        sem_post(&shm->empty);
 
     }
-    /* while (1){
-        get the head of the fifo queue. 
-        if (head == NULL){
-            if(completed_requests == total_requests) {
-                break;
-            }
-            else {
-                continue;
-                or 
-                wait(semaphore) wait on a semaphore that gets posted when a request arrives
-                that logic might be implied instead of all this block of code.
-            }
-        }
-        else 
-        {
-            create thread to serve
-        }
-
-    } */
-
-    // Use sem_wait and sem_post to control access to shared memory
-
-
 
     // wait for all child customers to finish
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) 
         waitpid(customers[i], NULL, 0);
-    }
     free(customers);
-
-
-    // print queue
-    printf("Queue size: %d\n", shm->queue.size);
-    printQueue(&shm->queue);
 
     // Detach shared memory segment
     shmdt(shm);
@@ -110,8 +84,10 @@ int main(int argc, char** argv) {
     shmctl(shmid, IPC_RMID, NULL);
     
     // destroy semaphores
-    sem_destroy(&shm->queueSem);
-    sem_destroy(&shm->nonEmpty);
+    sem_destroy(&shm->mutex);
+    sem_destroy(&shm->empty);
+    sem_destroy(&shm->full);
+
 
     return 0;
 }
