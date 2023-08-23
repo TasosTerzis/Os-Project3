@@ -9,6 +9,8 @@
 #include <time.h>
 #include <sys/time.h>
 #include <math.h>
+#include <pthread.h>
+#include <string.h>
 #define TOTAL_FILES 10   // fileserver has exactly TOTAL_FILES files 
 #define TOTAL_LINES 100  // each file has 20 exactly TOTAL_LINES lines
 #define BLOCK_SIZE 100   // equal to MAX_LINE_LENGTH. (The existing files have about 70 characters per line.)
@@ -16,6 +18,7 @@
 
 
 struct request {
+    int pindex;
     pid_t pid; // client pid
     int fileNum;
     int start, stop;
@@ -32,4 +35,12 @@ struct shared_memory {
 };
 typedef struct shared_memory* SharedMemory;
 
-void customer (SharedMemory, int K, int L, float l);
+struct temp_shared_memory {
+    char array[BLOCK_SIZE];
+    sem_t mutex;
+};
+typedef struct temp_shared_memory* TempSharedMemory;
+
+void customer (SharedMemory, int, int, float);
+
+void* serverThread (void*);

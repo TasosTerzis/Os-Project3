@@ -50,8 +50,11 @@ int main(int argc, char** argv) {
             perror("fork"); exit(1); }
     }
 
+
     // Your simulation logic goes here
     int count=0;
+    pthread_t thread_ids[N*L]; // Array to store thread IDs
+
     while(1) {
 
         sem_wait(&shm->full);
@@ -59,6 +62,12 @@ int main(int argc, char** argv) {
 
         // Get request from shared memory
         Request request = shm->array[shm->out];
+
+        // whenever server gets a request, it will create a new thread to handle it
+        pthread_t tid;
+        pthread_create(&tid, NULL, serverThread, &request);
+        thread_ids[count] = tid; // Store thread ID
+
         shm->out = (shm->out + 1) % MAX_QUEUE_SIZE;
         shm->size--;
         count++;
@@ -70,6 +79,11 @@ int main(int argc, char** argv) {
         sem_post(&shm->mutex);
         sem_post(&shm->empty);
 
+    }
+
+    // Wait for all threads to finish
+    for (int i = 0; i < count; i++) {
+        pthread_join(thread_ids[i], NULL);
     }
 
     // wait for all child customers to finish
