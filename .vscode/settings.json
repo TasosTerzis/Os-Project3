@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "time.h": "c"
+        "time.h": "c",
+        "mutual.h": "c",
+        "types.h": "c"
     }
 }

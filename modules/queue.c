@@ -1,61 +1,36 @@
 #include "../include/mutual.h"
 
-// Function to create an empty queue
-Queue createQueue() {
-    Queue queue = (Queue)malloc(sizeof(struct queue));
-    queue->front = queue->rear = NULL;
-    queue->size = 0;
-    return queue;
-}
-
 // Function to enqueue a request to the rear of the queue
-void enqueue(Queue queue, Request request) {
-    if (queue->rear == NULL) {
-        queue->front = queue->rear = request;
+void enqueue(Queue* queue, Request request) {
+    if (queue->size < MAX_QUEUE_SIZE) {
+        queue->array[queue->rear] = request;
+        queue->rear = (queue->rear + 1) % MAX_QUEUE_SIZE;
         queue->size++;
-        return;
-    }
-    queue->rear->next = request;
-    queue->rear = request;
-    queue->size++;
-    gettimeofday(&request->requestTime, NULL);      // set request time since
+        gettimeofday(&queue->array[queue->rear - 1].requestTime, NULL); // set request time since
+    } 
 }
 
 // Function to dequeue a request from the front of the queue
-void dequeue(Queue queue) {
-    if (queue->front == NULL)
-        return;
-
-    Request temp = queue->front;
-    queue->front = queue->front->next;
-
-    if (queue->front == NULL)
-        queue->rear = NULL;
-    queue->size--;
-
-    free(temp);
+Request dequeue(Queue* queue) {
+    Request request;
+    if (queue->size > 0) {
+        request = queue->array[queue->front];
+        queue->front = (queue->front + 1) % MAX_QUEUE_SIZE;
+        queue->size--;
+    }
+    return request;
 }
 
 // Function to print the requests in the queue
-void printQueue(Queue queue) {
-    Request current = queue->front;
-    while (current != NULL) {
-        printf("PID: %d, FileNum: %d\n", current->pid, current->fileNum);
-        current = current->next;
-    }
-    printf("\n");
+void printQueue(Queue* queue) {
+    // int currentIdx = queue->front;
+    // for (int i = 0; i < queue->size; i++) {
+    //     printf("PID: %d, FileNum: %d\n", queue->array[currentIdx].pid, queue->array[currentIdx].fileNum);
+    //     currentIdx = (currentIdx + 1) % MAX_QUEUE_SIZE;
+    // }
+    // printf("\n");
 }
 
-int queueSize(Queue queue) {
+int queueSize(Queue* queue) {
     return queue->size;
-}
-
-void destroyQueue(Queue queue) {
-    Request current = queue->front;
-    while (current != NULL) {
-        Request temp = current;
-        current = current->next;
-        free(temp);
-    }
-    free(queue);
 }

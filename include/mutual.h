@@ -13,29 +13,29 @@
 #define BLOCK_SIZE 100   // equal to MAX_LINE_LENGTH. (The existing files have about 70 characters per line.)
 
 
-// Define REQUESTS structure
-typedef struct request* Request;
+#define MAX_QUEUE_SIZE 100 // Maximum number of elements in the queue
+
+typedef struct request Request;
 struct request {
     pid_t pid; // client pid
     int fileNum;
     int start, stop;
     struct timeval requestTime; // time of request
-    Request next;
 };
 
-// fifo dynamic queue to store requests
+// fifo circular queue to store requests
 struct queue {
-    Request front;
-    Request rear;
-    int size;
+    int front, rear, size;
+    Request array[MAX_QUEUE_SIZE];
 };
-typedef struct queue* Queue;
+typedef struct queue Queue;
 
 struct shared_memory {
-    int test;
-    // sem_t queueSem;
-    // sem_t a;   // semaphore for server to wait if queue is currently empty.
-    // Queue queue;
+    sem_t nonEmpty; // semaphore to check if queue is empty
+    sem_t countSem;   
+    int count;
+    sem_t queueSem;
+    Queue queue;
                 // probably i'll add a check for new request: if queueSize was 0, then increase semaphore a.
                 // server had been waiting on a semaphore a, so it will be released and will check the queue again.
                 // also, when a request is completed, request will check if it was the last one so. 
@@ -48,15 +48,12 @@ void customer (SharedMemory, int K, int L, int l);
 Queue createQueue();
 
 // Function to enqueue a request to the rear of the queue
-void enqueue(Queue, Request);
+void enqueue(Queue*, Request);
 
 // Function to dequeue a request from the front of the queue
-void dequeue(Queue);
+Request dequeue(Queue*);
 
-int queueSize(Queue queue);
+int queueSize(Queue*);
 
 // Function to print the requests in the queue
-void printQueue(Queue);
-
-//
-void destroyQueue(Queue queue);
+void printQueue(Queue*);
