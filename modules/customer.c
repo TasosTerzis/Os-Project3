@@ -34,7 +34,7 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
             request.stop = temp;
         }
         request.pid = pid;
-        printf("here is my request: %d %d %d %d\n", request.fileNum, request.start, request.stop, request.pid);
+        // printf("here is my request: %d %d %d %d\n", request.fileNum, request.start, request.stop, request.pid);
 
         // create a temporary shared memory segment of size TempSharedMemory
         int shmTempId = shmget(IPC_PRIVATE, sizeof(TempSharedMemory), IPC_CREAT | 0666);
@@ -77,25 +77,25 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
         // start retrieving data from temp shared memory
         int num_blocks = request.stop-request.start;
 
-        // for (int block = 0; block <= num_blocks; block++) {
-        //     // Wait for server process to write new block
-        //     sem_wait(&shmTemp->dataReady);
+        for (int block = 0; block <= num_blocks; block++) {
+            // Wait for server process to write new block
+            sem_wait(&shmTemp->dataReady);
 
-        //     // printf  ("sem_wait(mutex) beofre\n");
-        //     sem_wait(&shmTemp->mutex);
-        //     // printf  ("sem_wait(mutex) after\n");
+            // printf  ("sem_wait(mutex) beofre\n");
+            sem_wait(&shmTemp->mutex);
+            // printf  ("sem_wait(mutex) after\n");
 
 
-        //     // Read data_block from shared memory segment
-        //     char data_block[BLOCK_SIZE];
-        //     memcpy(data_block, shmTemp->array, BLOCK_SIZE);
-        //     //  print data block to log
-        //     fprintf(file, "%s", data_block);
+            // Read data_block from shared memory segment
+            char data_block[BLOCK_SIZE];
+            memcpy(data_block, shmTemp->array, BLOCK_SIZE);
+            //  print data block to log
+            fprintf(file, "%s", data_block);
 
-        //     // Notify the server process that the block has been read
-        //     sem_post(&shmTemp->mutex);
-        //     sem_post(&shmTemp->dataEaten);
-        // }
+            // Notify the server process that the block has been read
+            sem_post(&shmTemp->mutex);
+            sem_post(&shmTemp->dataEaten);
+        }
 
         // add request info to log
         fprintf(file, "\nSTATISTICS:\n");
@@ -112,6 +112,7 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
 
         // Detach from shared memory segment
         shmdt(shmTemp);
+        // shmctl(shmTempId, IPC_RMID, NULL);
 
         // DONT FORGET TO UNCOMMENT THIS. 
         // usleep(time_between_requests * 1000000);

@@ -76,13 +76,16 @@ int main(int argc, char** argv) {
         sem_wait(&shm->mutex);
 
         // Get request from shared memory
-        Request request = shm->array[shm->out];
+        Request* request = malloc(sizeof(Request));
+        *request = shm->array[shm->out];
+        // printf("Ser-Loop-> Request: file%d, lines %d-%d, process %d\n", request->fileNum, request->start, request->stop, request->pid);
 
         // whenever server gets a request, it will create a new thread to handle it
         pthread_t tid;
-        pthread_create(&tid, NULL, serverThread, &request);
+        pthread_create(&tid, NULL, serverThread, request);
         thread_ids[count] = tid; // Store thread ID
 
+        // free(request);
         shm->out = (shm->out + 1) % MAX_QUEUE_SIZE;
         shm->size--;
         count++;
@@ -108,9 +111,6 @@ int main(int argc, char** argv) {
 
     // Detach shared memory segment
     shmdt(shm);
-
-    // Clean up shared memory and semaphore after the simulation
-    shmctl(shmid, IPC_RMID, NULL);
     
     // destroy semaphores
     for (int i = 0; i < TOTAL_FILES; i++) 
