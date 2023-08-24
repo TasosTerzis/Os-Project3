@@ -70,19 +70,20 @@ int main(int argc, char** argv) {
     // dynamic array to store thread ids
     pthread_t* thread_ids = (pthread_t *)malloc(N*L * sizeof(pthread_t));
 
+    Request* requests = malloc(N*L*sizeof(Request));
+    
     while(1) {
 
         sem_wait(&shm->full);
         sem_wait(&shm->mutex);
 
         // Get request from shared memory
-        Request* request = malloc(sizeof(Request));
-        *request = shm->array[shm->out];
+        requests[count] = shm->array[shm->out];
         // printf("Ser-Loop-> Request: file%d, lines %d-%d, process %d\n", request->fileNum, request->start, request->stop, request->pid);
 
         // whenever server gets a request, it will create a new thread to handle it
         pthread_t tid;
-        pthread_create(&tid, NULL, serverThread, request);
+        pthread_create(&tid, NULL, serverThread, &requests[count]);
         thread_ids[count] = tid; // Store thread ID
 
         // free(request);
@@ -107,6 +108,8 @@ int main(int argc, char** argv) {
     // wait for all child customers to finish
     for (int i = 0; i < N; i++) 
         waitpid(customers[i], NULL, 0);
+    
+    free(requests);
     free(customers);
 
     // Detach shared memory segment
