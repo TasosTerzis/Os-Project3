@@ -31,31 +31,33 @@ void* serverThread(void* arg) {
         current_line++;
     }
 
-    for (int block = 0; block <= num_blocks; block++) {
+    // print request info
+    printf("Request: file%d, lines %d-%d, process %d\n", request.fileNum, request.start, request.stop, request.pid);
+
+    // for (int block = 0; block <= num_blocks; block++) {
         
-        if(block>0){
-            sem_wait(&shmTemp->dataEaten);
-        }
-        char* line = fgets(data_block, BLOCK_SIZE, file);
-        if (line == NULL) {
-            perror("fgets"); pthread_exit(NULL);}
+    //     if(block>0){
+    //         sem_wait(&shmTemp->dataEaten);
+    //     }
+    //     char* line = fgets(data_block, BLOCK_SIZE, file);
+    //     if (line == NULL) {
+    //         perror("fgets"); pthread_exit(NULL);}
 
-        sem_wait(&shmTemp->mutex);
-        memcpy(shmTemp->array, data_block, BLOCK_SIZE);
-        sem_post(&shmTemp->mutex);
-        sem_post(&shmTemp->dataReady);
+    //     sem_wait(&shmTemp->mutex);
+    //     memcpy(shmTemp->array, data_block, BLOCK_SIZE);
+    //     sem_post(&shmTemp->mutex);
+    //     sem_post(&shmTemp->dataReady);
 
-        // Sleep or perform other operations between blocks if needed
-    }
+    //     // Sleep or perform other operations between blocks if needed
+    // }
     // sem_post(&fileSem[request.fileNum]);
     
 
     fclose(file);
-    pthread_exit(NULL);
-
 
     // Detach from shared memory segment
     shmdt(shmTemp);
+    // shmctl(request.shmTempId, IPC_RMID, NULL);
 
     pthread_exit(NULL);
 }

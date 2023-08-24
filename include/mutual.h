@@ -18,6 +18,7 @@
 
 
 struct request {
+    pid_t pid; // process id
     int shmTempId; // shared memory id
     int fileNum;
     int start, stop;
