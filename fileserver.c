@@ -1,5 +1,7 @@
 #include "./include/mutual.h"
 
+sem_t fileSem[TOTAL_FILES];
+
 int main(int argc, char** argv) {
     
     if (argc != 5) {
@@ -14,6 +16,14 @@ int main(int argc, char** argv) {
 
     // delete all log files
     system("rm -rf log/*");
+
+    // initialize file semaphores
+    for (int i = 0; i < TOTAL_FILES; i++) {
+        char sem_name[20];
+        sprintf(sem_name, "/file%d", i);
+        if (sem_init(&fileSem[i], 1, 1) == -1) {
+            perror("sem_init"); exit(1); }
+    }
 
     // Create shared memory segment
     int shmid = shmget(IPC_PRIVATE, sizeof(SharedMemory), IPC_CREAT | 0666);
@@ -57,7 +67,8 @@ int main(int argc, char** argv) {
 
     // Your simulation logic goes here
     int count=0;
-    pthread_t thread_ids[N*L]; // Array to store thread IDs
+    // dynamic array to store thread ids
+    pthread_t* thread_ids = (pthread_t *)malloc(N*L * sizeof(pthread_t));
 
     while(1) {
 
@@ -77,7 +88,7 @@ int main(int argc, char** argv) {
         count++;
         if(count == N*L) {
             sem_post(&shm->mutex);
-            sem_post(&shm->full);
+            sem_post(&shm->empty);
             break;
         }
         sem_post(&shm->mutex);
@@ -88,6 +99,7 @@ int main(int argc, char** argv) {
     // Wait for all threads to finish
     for (int i = 0; i < count; i++) 
         pthread_join(thread_ids[i], NULL);
+    free(thread_ids);
 
     // wait for all child customers to finish
     for (int i = 0; i < N; i++) 
@@ -101,9 +113,12 @@ int main(int argc, char** argv) {
     shmctl(shmid, IPC_RMID, NULL);
     
     // destroy semaphores
+    for (int i = 0; i < TOTAL_FILES; i++) 
+        sem_destroy(&fileSem[i]);
     sem_destroy(&shm->mutex);
     sem_destroy(&shm->empty);
     sem_destroy(&shm->full);
+
 
 
     return 0;

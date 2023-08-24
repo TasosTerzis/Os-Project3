@@ -1,0 +1,6 @@
+.vscode/settings.json
+modules/thread.o
+modules/customer.o
+fileserver.o
+fileserver
+log/*.txt

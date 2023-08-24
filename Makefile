@@ -16,7 +16,7 @@ OBJS = fileserver.o  $(MODULES)/customer.o $(MODULES)/thread.o
 EXEC = fileserver
 
 # arguments
-ARGS = 1 10 20 1
+ARGS = 2 10 3 1
 
 $(EXEC): $(OBJS)
 	$(CC) $(OBJS) -o $(EXEC) $(LDFLAGS)

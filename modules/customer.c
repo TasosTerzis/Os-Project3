@@ -17,6 +17,8 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
 
     for(int i = 0; i < L; i++ ) { 
 
+        printf("im process %d and im on iteration %d\n", id, i);
+
         // print request counter to log
         fprintf(file, "--------------------------------------------------");
         fprintf(file, "----------------------------------------------\n\n");
@@ -38,6 +40,7 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
         if (shmTempId == -1) {
             perror("shmget"); exit(1);}
 
+        // add shmTempId to request. that way, the serving thread can attach to the new temp shared memory segment
         request.shmTempId = shmTempId;
         
         // Attach shared memory segment
@@ -66,19 +69,22 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
         shm->in = (shm->in + 1) % MAX_QUEUE_SIZE;
         shm->size++;
         gettimeofday(&request.requestTime, NULL); // set request time since
-        // printf("RequestTime: %ld, PID: %d, FileNum: %d, Start: %d, Stop: %d\n", 
-        // request.requestTime.tv_usec, request.pid, request.fileNum, request.start, request.stop);
-        sem_post(&shm->mutex);
         sem_post(&shm->full);
+        sem_post(&shm->mutex);
 
 
         // start retrieving data from temp shared memory
         int num_blocks = request.stop-request.start;
 
+        sleep(1);
         for (int block = 0; block <= num_blocks; block++) {
             // Wait for server process to write new block
             sem_wait(&shmTemp->dataReady);
+
+            // printf  ("sem_wait(mutex) beofre\n");
             sem_wait(&shmTemp->mutex);
+            // printf  ("sem_wait(mutex) after\n");
+
 
             // Read data_block from shared memory segment
             char data_block[BLOCK_SIZE];
@@ -102,6 +108,7 @@ void customer (SharedMemory shm, int K, int L, float l, int id) {
         // destroy semaphore
         sem_destroy(&shmTemp->mutex);
         sem_destroy(&shmTemp->dataReady);
+        sem_destroy(&shmTemp->dataEaten);
 
         // Detach from shared memory segment
         shmdt(shmTemp);
