@@ -11,8 +11,8 @@ int main(int argc, char** argv) {
     int K = atoi(argv[2]); // K available files in system
     int L = atoi(argv[3]); // L requests per customers
     float l = atof(argv[4]); // l: Exponential time between SharedMemory
-    if(L > MAX_QUEUE_SIZE) {
-        printf("L must be <= MAX_QUEUE_SIZE: %d\n", MAX_QUEUE_SIZE); exit(1); }
+    // if(L > MAX_QUEUE_SIZE) {
+    //     printf("L must be <= MAX_QUEUE_SIZE: %d\n", MAX_QUEUE_SIZE); exit(1); }
 
     // delete all log files
     system("rm -rf log/*");
