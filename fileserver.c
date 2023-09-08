@@ -9,6 +9,8 @@ int main(int argc, char** argv) {
     int K = atoi(argv[2]); // K available files in system
     int L = atoi(argv[3]); // L requests per customers
     float l = atof(argv[4]); // l: Exponential time between SharedMemory
+    if(K > TOTAL_FILES) {
+        printf("K must be less than or equal to %d\n", TOTAL_FILES); exit(1); }
 
     // delete all existing log files
     system("rm -rf log/*");

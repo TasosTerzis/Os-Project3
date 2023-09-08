@@ -21,7 +21,6 @@ struct request {
     int shmTempId;       // Threads will use this id to attach to shm
     int fileNum;         // file number (0-9)
     int start, stop;     // start and stop lines
-    struct timeval requestTime; // request placed in queue at time:
 };
 typedef struct request Request;
 
