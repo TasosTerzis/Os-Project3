@@ -1,63 +1,57 @@
 #include "../include/mutual.h"
 
-extern sem_t fileSem[TOTAL_FILES];
-
 void* serverThread(void* arg) {
 
+    // this is the request that the thread will serve
     Request request = *(Request*)arg;
-    printf("Thread-Loop-> Request: file%d, lines %d-%d, process %d\n", request.fileNum, request.start, request.stop, request.pid);
 
-    // Attach to the shared memory segment of the client process
+    // Retrieve id of the shared memory from the request, to attach to client's shared memory
     TempSharedMemory shmTemp = (TempSharedMemory)shmat(request.shmTempId, NULL, 0);
     if ((void*)shmTemp == (void*)-1) {
         perror("shmat"); pthread_exit(NULL); }
 
-    // Simulate reading and sending data in blocks
+    // Client wants to read lines from start to stop
     int num_blocks = request.stop-request.start;
     
-    // open the file that is found in the files folder
-    // sem_wait(&fileSem[request.fileNum]);
+    // open the requested file. All found in the files folder
     char filename[20];
     sprintf(filename, "files/file%d.txt", request.fileNum);
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
         perror("fopen"); pthread_exit(NULL); }
 
+    // find the starting line
     int current_line = 0;
     char data_block[BLOCK_SIZE];
-
     while (current_line < request.start-1) {
         if (fgets(data_block, BLOCK_SIZE, file) == NULL) {
             perror("fgets"); pthread_exit(NULL); }
         current_line++;
     }
 
-    // print request info
-
+    // start sending. one line at a time
     for (int block = 0; block <= num_blocks; block++) {
         
-        if(block>0){
+        // wait for client to consume the previous block
+        if(block>0)
             sem_wait(&shmTemp->dataEaten);
-        }
+        
+        // get line from file
         char* line = fgets(data_block, BLOCK_SIZE, file);
         if (line == NULL) {
             perror("fgets"); pthread_exit(NULL);}
 
-        sem_wait(&shmTemp->mutex);
-        memcpy(shmTemp->array, data_block, BLOCK_SIZE);
-        sem_post(&shmTemp->mutex);
+        // pass line to shared memory
+        memcpy(shmTemp->block, data_block, BLOCK_SIZE);
+
+        // signal client that data is ready
         sem_post(&shmTemp->dataReady);
 
-        // Sleep or perform other operations between blocks if needed
     }
-    sem_post(&fileSem[request.fileNum]);
     
-
+    // normal exit
     fclose(file);
-
-    // Detach from shared memory segment
     shmdt(shmTemp);
-    // shmctl(request.shmTempId, IPC_RMID, NULL);
-
     pthread_exit(NULL);
+
 }
